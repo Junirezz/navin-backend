@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Added reusable user/organization query mocks and repository contract coverage (#748).
+- Consolidated Socket.IO mock exports and checked every bulk telemetry broadcast payload (#746).
+- Migrated list-users tests to shared ESM dependency mocks (#749).
+- Isolated invitation tests from user/organization repositories and audit persistence (#750).
+
 ### Added
 
 - Added Docker Compose quickstart, service topology, environment-matrix pointer, and troubleshooting guidance to the README
