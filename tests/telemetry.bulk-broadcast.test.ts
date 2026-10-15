@@ -1,5 +1,4 @@
 import { describe, expect, beforeEach, it, jest } from '@jest/globals';
-import { Telemetry } from '../src/modules/telemetry/telemetry.model.js';
 import request from 'supertest';
 import { signToken } from './fixtures/factories.js';
 import type { Application } from 'express';
@@ -69,10 +68,8 @@ function makeSyntheticTelemetryDoc(doc: TelemetryCreateInput, id: string): Synth
  * 6.1 Example-based broadcast tests for POST /api/telemetry/bulk.
  * Validates Requirements 4.1, 4.2, 4.3, 4.5.
  *
- * Follows the exact pattern from tests/realtime.events.test.ts:
- * - Mock functions declared at describe scope (stable references for factory closures)
- * - jest.clearAllMocks() only in beforeEach (no resetModules)
- * - jest.unstable_mockModule called in beforeEach before buildApp()
+ * Stable mock references are registered after resetModules and before importing
+ * the app, including the socket exports used by transitive payment imports.
  */
 describe('POST /api/telemetry/bulk — Socket.io broadcast (example-based)', () => {
   const validToken = signToken(
@@ -111,9 +108,7 @@ describe('POST /api/telemetry/bulk — Socket.io broadcast (example-based)', () 
       Promise.resolve(makeSyntheticTelemetryDoc(doc, `telemetry-id-${++createCallCount}`))
     );
 
-    // #759: the mock must expose the *whole* io.js surface. The payments module
-    // imports `emitPaymentStatusChange`, so omitting it broke module linking
-    // ("does not provide an export named 'emitPaymentStatusChange'").
+    // The shared factory also supplies the emitters imported by payments.
     await jest.unstable_mockModule(socketIoPath, () =>
       socketIoMock({
         emitTelemetryUpdate: mockEmitTelemetryUpdate,
@@ -300,7 +295,22 @@ describe('bulkIngestTelemetry — Property 1: emit count equals item count', () 
 
         await bulkIngestTelemetry(items);
 
-        return mockEmit.mock.calls.length === items.length;
+        expect(mockEmit).toHaveBeenCalledTimes(items.length);
+        items.forEach((item, index) => {
+          expect(mockEmit).toHaveBeenNthCalledWith(index + 1, item.shipmentId, {
+            telemetryId: `telemetry-id-${index + 1}`,
+            shipmentId: item.shipmentId,
+            sensorId: item.shipmentId,
+            temperature: item.temperature,
+            humidity: item.humidity,
+            latitude: item.latitude,
+            longitude: item.longitude,
+            batteryLevel: item.batteryLevel,
+            timestamp: item.timestamp.toISOString(),
+            dataHash: 'mock-hash',
+            anchorStatus: 'PENDING_ANCHOR',
+          });
+        });
       }),
       { numRuns: 100 }
     );

@@ -8,6 +8,7 @@
  * renamed.
  */
 import { expect, jest } from '@jest/globals';
+import { createSocketIoMock } from './mocks.js';
 import { SOCKET_EVENTS } from '../../src/shared/types/socketEvents.js';
 import type {
   SettlementStatusPayload,
@@ -48,10 +49,7 @@ export function socketIoMock(
   } = {}
 ) {
   return {
-    initSocketIO: jest.fn(),
-    getIO: jest.fn(),
-    closeSocketIO: jest.fn(async () => undefined),
-    getActiveUsers: jest.fn(() => new Map<string, string>()),
+    ...createSocketIoMock(),
     emitTelemetryUpdate: overrides.emitTelemetryUpdate ?? jest.fn<TelemetryEmitter>(),
     emitPaymentStatusChange: overrides.emitPaymentStatusChange ?? jest.fn<SettlementEmitter>(),
     emitAnomalyDetected: overrides.emitAnomalyDetected ?? jest.fn<AnomalyEmitter>(),
