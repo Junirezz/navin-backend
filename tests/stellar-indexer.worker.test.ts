@@ -60,7 +60,10 @@ describe('stellar indexer worker - event driven', () => {
           transactionHash: mockEvents[0].tx_hash,
           actor: 'stellar-indexer',
         },
-        $set: expect.objectContaining({ milestoneEvent: 'IN_TRANSIT' }),
+        $set: expect.objectContaining({
+          milestoneEvent: 'IN_TRANSIT',
+          dataHash: 'a'.repeat(64),
+        }),
       }),
       { upsert: true }
     );
