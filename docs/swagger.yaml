@@ -7590,8 +7590,13 @@ components:
         shipmentId:
           type: string
           description: Associated shipment ObjectId
+        milestoneEvent:
+          $ref: '#/components/schemas/MilestoneEvent'
+          description: Canonical lifecycle event for this block.
         eventType:
           $ref: '#/components/schemas/MilestoneEvent'
+          deprecated: true
+          description: Deprecated alias of milestoneEvent. Accepted on input but not persisted separately.
         dataHash:
           type: string
           nullable: true
@@ -7599,6 +7604,13 @@ components:
             SHA-256 hex digest of the payload committed by the on-chain transaction.
             Allows independent verification that `transactionHash` covers the expected data.
             Present only when the block was created with an associated on-chain anchor.
+        canonicalPayload:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: >
+            Canonical JSON payload that was hashed into dataHash and anchored on-chain.
+            Stored alongside the block for independent verification.
         transactionHash:
           type: string
           nullable: true
