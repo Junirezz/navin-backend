@@ -109,11 +109,15 @@ export async function indexStellarTransactions(
       {
         $setOnInsert: {
           shipmentId,
-          eventType: milestoneEvent,
+          milestoneEvent,
           transactionHash: event.tx_hash,
           actor: 'stellar-indexer',
         },
-        $set: { metadata },
+        $set: {
+          milestoneEvent,
+          metadata,
+          ...(typeof metadata.dataHash === 'string' && { dataHash: metadata.dataHash }),
+        },
       },
       { upsert: true }
     );

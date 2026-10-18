@@ -9,13 +9,16 @@ import { describe, it, expect } from '@jest/globals';
 import { LedgerBlock } from '../src/modules/ledger/ledger.model.js';
 
 describe('LedgerBlockSchema — dataHash index (issue #660)', () => {
-  it('defines a { dataHash: 1 } index on the schema', () => {
+  it('defines a { milestoneEvent: 1, createdAt: -1 } index and no eventType index', () => {
     const fieldSpecs = LedgerBlock.schema
       .indexes()
       .map(([fields]: [Record<string, unknown>]) => fields);
 
     expect(fieldSpecs).toEqual(
-      expect.arrayContaining([{ dataHash: 1 }]),
+      expect.arrayContaining([{ milestoneEvent: 1, createdAt: -1 }]),
+    );
+    expect(fieldSpecs).not.toEqual(
+      expect.arrayContaining([{ eventType: 1, createdAt: -1 }]),
     );
   });
 
