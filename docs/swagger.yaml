@@ -4826,7 +4826,7 @@ paths:
                schema:
                  $ref: '#/components/schemas/ErrorResponse'
      delete:
-       operationId: organizations_delete_organizations_id
+       operationId: deleteOrganization
        tags:
          - Organizations
        x-required-role: [SUPER_ADMIN]
