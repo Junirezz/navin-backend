@@ -65,4 +65,13 @@ export interface ChainAdapter {
    * @throws {AppError} ERR_CHAIN_INVALID_EVENT when an emitted event violates the spec.
    */
   streamEvents(cursor?: ChainEventCursor): AsyncIterable<ChainEvent>;
+
+  /**
+   * Optional read-only ledger queries used by confirmation tracking (#818).
+   * `getLatestLedger` returns the current ledger sequence. `getTransactionLedger`
+   * returns the ledger containing a successful transaction, or null when the
+   * transaction is not found or did not succeed.
+   */
+  getLatestLedger?(): Promise<number>;
+  getTransactionLedger?(txHash: string): Promise<number | null>;
 }
