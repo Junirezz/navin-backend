@@ -124,12 +124,39 @@ Content-Type: application/json
 
 ### Validation Errors
 - `ERR_BAD_REQUEST` (400) — Malformed request
-- `VALIDATION_ERROR` (400) — Zod schema validation failure
+- `VALIDATION_ERROR` (400) — Zod schema validation failure. This is the literal
+  `code` string emitted by `validateRequest` in
+  `src/shared/validation/validate.ts` for 400 schema failures.
+- `ERR_VALIDATION_FAILED` (400) — Legacy alias: the value of
+  `ErrorCodes.VALIDATION_ERROR` in `src/shared/http/errors.ts`. Both strings
+  are registered in the Swagger `ErrorCode` enum; clients must accept either.
 
 ### Rate Limiting
 - `ERR_RATE_LIMIT_EXCEEDED` (429) — Too many requests. Clients must back off
   and retry only after the delay indicated by the `Retry-After` response
   header (e.g. OTP resend throttling).
+
+#### 429 Too Many Requests — response shape
+
+Rate-limited requests (see `src/shared/middleware/rateLimiter.ts`) return the
+standard error envelope with a top-level `retryAfter` (seconds) and a
+`Retry-After` response header carrying the same delay. Standard
+`RateLimit-Limit`, `RateLimit-Remaining`, and `RateLimit-Reset` headers are
+also present.
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 900
+RateLimit-Limit: 100
+RateLimit-Remaining: 0
+
+{
+  "success": false,
+  "message": "Too many requests, please try again later.",
+  "data": null,
+  "retryAfter": 900
+}
+```
 
 ### Events / Real-time Errors
 - `ERR_EVENTS_POLL_FAILED` (502) — Redis event store unavailable; polling fallback could not retrieve recent events
