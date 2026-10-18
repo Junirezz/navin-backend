@@ -7435,9 +7435,10 @@ components:
         - ERR_FILE_UPLOAD_FAILED
         - ERR_FILE_DELETE_FAILED
       description: |
-        Standard error codes returned by the API (all values from
-        `ErrorCodes` in src/shared/http/errors.ts, plus VALIDATION_ERROR).
-        See docs/ERROR_CODES.md for details.
+        Exhaustive machine-readable error code registry. Every value of
+        `ErrorCodes` in src/shared/http/errors.ts is listed below, plus the
+        `VALIDATION_ERROR` literal emitted by validateRequest for 400 schema
+        failures. Referenced from ErrorResponse. See docs/ERROR_CODES.md for details.
         - VALIDATION_ERROR: Schema validation failed (400)
         - ERR_AUTH_INVALID: Invalid or missing authentication token (401)
         - ERR_PERMISSION_DENIED: Insufficient role permissions (403)
