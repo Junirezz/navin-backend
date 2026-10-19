@@ -6467,33 +6467,7 @@ paths:
                   message:
                     type: string
                   data:
-                    type: object
-                    properties:
-                      canonicalPayload:
-                        type: object
-                        additionalProperties: true
-                        nullable: true
-                        description: >
-                          Exact object that was hashed into `dataHash`. Null for blocks
-                          written before the payload began being persisted; such blocks
-                          are unverifiable, not invalid.
-                      dataHash:
-                        type: string
-                        nullable: true
-                        description: >
-                          Lowercase hex SHA-256 digest (64 chars) of the canonical payload,
-                          committed on-chain by `txHash`.
-                      txHash:
-                        type: string
-                        nullable: true
-                        description: On-chain transaction hash to look up on Horizon / Soroban RPC.
-                      transactionHash:
-                        type: string
-                        nullable: true
-                        description: Alias of `txHash`.
-                      ledger:
-                        type: integer
-                        description: Stellar ledger sequence the transaction landed in.
+                    $ref: '#/components/schemas/LedgerVerificationBundle'
         '401':
           description: Unauthorized
         '403':
@@ -7776,10 +7750,6 @@ components:
         milestoneEvent:
           $ref: '#/components/schemas/MilestoneEvent'
           description: Canonical lifecycle event for this block.
-        eventType:
-          $ref: '#/components/schemas/MilestoneEvent'
-          deprecated: true
-          description: Deprecated alias of milestoneEvent. Accepted on input but not persisted separately.
         dataHash:
           type: string
           nullable: true
@@ -7810,6 +7780,39 @@ components:
         updatedAt:
           type: string
           format: date-time
+    LedgerVerificationBundle:
+      type: object
+      description: >
+        Off-chain / on-chain verification bundle for a ledger block, returned by
+        GET /api/ledger/blocks/{id}/verification. A verifier recomputes
+        sha256(canonicalPayload) and compares it with dataHash, then confirms the
+        digest is committed on-chain via txHash.
+      properties:
+        canonicalPayload:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: >
+            Exact object that was hashed into `dataHash`. Null for blocks written
+            before the payload began being persisted; such blocks are unverifiable,
+            not invalid.
+        dataHash:
+          type: string
+          nullable: true
+          description: >
+            Lowercase hex SHA-256 digest (64 chars) of the canonical payload,
+            committed on-chain by `txHash`.
+        txHash:
+          type: string
+          nullable: true
+          description: On-chain transaction hash to look up on Horizon / Soroban RPC.
+        transactionHash:
+          type: string
+          nullable: true
+          description: Alias of `txHash`.
+        ledger:
+          type: integer
+          description: Stellar ledger sequence the transaction landed in.
     Notification:
       type: object
       description: A notification entry for a user.
