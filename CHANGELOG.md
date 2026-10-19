@@ -29,10 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Added canonical `dataHash` persistence for shipment status, settlement, and proof ledger events (#654)
+- Added a config-selected chain adapter factory with `SimulatedAdapter` for Horizon manage-data flows and `SorobanAdapter` for Soroban RPC contract execution (#653, #656)
+- Persisted canonical payloads and `dataHash` values on ledger blocks, with a sparse `dataHash` lookup index (#655, #660)
+- Extended canonical `dataHash` generation to shipment status, settlement, and proof ledger events (#654)
+- Updated the environment-variable matrix for storage providers, TOTP encryption, and Soroban adapter requirements
+- Cross-checked the error-code registry against active module errors and clarified unused settlement codes
 - Corrected `docs/PAGINATION.md` pagination strategy table: users dual-mode is live, documented the payments `total` meta variance, added shipment timeline to the cursor list (#576)
-
-### Changed
 
 - Documented Horizon escrow fallback and Soroban integration plan in `docs/blockchain.md` (#395)
 - Documented storage adapter contract in `docs/storage-adapter.md` and expanded JSDoc on `mockStorageService` (#397)
