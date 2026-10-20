@@ -154,5 +154,13 @@ describe('Event-driven indexer golden fixtures replay', () => {
       },
       { upsert: true }
     );
+
+    // Only the anchor promotes its hash to the top-level indexed LedgerBlock.dataHash.
+    const [anchorBlock, initBlock, releaseBlock] = ledgerUpdateOneMock.mock.calls.map(
+      ([, update]) => (update as { $set: Record<string, unknown> }).$set
+    );
+    expect(anchorBlock.dataHash).toBe(events[0].data[0]);
+    expect(initBlock).not.toHaveProperty('dataHash');
+    expect(releaseBlock).not.toHaveProperty('dataHash');
   });
 });
