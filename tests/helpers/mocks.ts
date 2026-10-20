@@ -277,7 +277,9 @@ export type EmailServiceMock = Omit<typeof emailService, 'sendEmail'> & {
 };
 
 /**
- * Full mock of `src/services/email.service.js` named exports.
+ * Full mock of `src/services/email.service.js` named exports. Inert by default:
+ * `sendEmail` resolves without a transport. `emailServiceMock.test.ts` fails if
+ * an export is added, renamed or removed in the service without updating this.
  */
 export function createEmailServiceMock(
   overrides: Partial<EmailServiceMock> = {}
