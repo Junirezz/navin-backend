@@ -145,6 +145,17 @@ export class SorobanAdapter implements ChainAdapter {
     }
   }
 
+  async getConfirmationCount(ledger: number): Promise<number> {
+    try {
+      const latest = await this.server.getLatestLedger();
+      return Math.max(0, latest.sequence - ledger);
+    } catch (err) {
+      throw new AppError(502, 'Failed to fetch latest Soroban ledger', ErrorCodes.CHAIN_UNKNOWN, {
+        cause: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   /**
    * Invocation pipeline: simulate -> assemble -> sign -> send -> poll
    */
