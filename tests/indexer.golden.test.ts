@@ -1,16 +1,32 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  createPaymentModelMock,
+  createSocketIoMock,
+  createTelemetryModelMock,
+} from './helpers/mocks.js';
 import type { ChainAdapter } from '../src/services/chain/types.js';
 import type { ChainEvent } from '../src/shared/types/chain.js';
 
 const ledgerUpdateOneMock = jest.fn();
+const paymentFindMock = jest.fn(() => ({ lean: async () => [] }));
+const telemetryFindMock = jest.fn(() => ({ lean: async () => [] }));
+const paymentModelMock = createPaymentModelMock({ PaymentModel: { find: paymentFindMock } });
+const telemetryModelMock = createTelemetryModelMock({ Telemetry: { find: telemetryFindMock } });
+const socketIoMock = createSocketIoMock();
 
 await jest.unstable_mockModule('../src/modules/ledger/ledger.model.js', () => ({
   LedgerBlock: {
     updateOne: ledgerUpdateOneMock,
   },
 }));
+await jest.unstable_mockModule('../src/modules/payments/payments.model.js', () => paymentModelMock);
+await jest.unstable_mockModule(
+  '../src/modules/telemetry/telemetry.model.js',
+  () => telemetryModelMock
+);
+await jest.unstable_mockModule('../src/infra/socket/io.js', () => socketIoMock);
 
 const { indexStellarTransactions } = await import('../src/workers/stellar-indexer.worker.js');
 
@@ -42,6 +58,9 @@ describe('Event-driven indexer golden fixtures replay', () => {
           yield ev;
         }
       },
+      async getConfirmationCount() {
+        return 3;
+      },
     };
 
     const summary = await indexStellarTransactions(mockAdapter);
@@ -57,11 +76,13 @@ describe('Event-driven indexer golden fixtures replay', () => {
       {
         $setOnInsert: {
           shipmentId: '65f1a2b3c4d5e6f708192a3b',
-          eventType: 'IN_TRANSIT',
+          milestoneEvent: 'IN_TRANSIT',
           transactionHash: events[0].tx_hash,
           actor: 'stellar-indexer',
         },
         $set: {
+          milestoneEvent: 'IN_TRANSIT',
+          dataHash: events[0].data[0],
           metadata: {
             blockNumber: 512345,
             ledger: 512345,
@@ -82,11 +103,12 @@ describe('Event-driven indexer golden fixtures replay', () => {
       {
         $setOnInsert: {
           shipmentId: '65f1a2b3c4d5e6f708192a3b',
-          eventType: 'SETTLEMENT_INITIATED',
+          milestoneEvent: 'SETTLEMENT_INITIATED',
           transactionHash: events[1].tx_hash,
           actor: 'stellar-indexer',
         },
         $set: {
+          milestoneEvent: 'SETTLEMENT_INITIATED',
           metadata: {
             blockNumber: 512346,
             ledger: 512346,
@@ -111,11 +133,12 @@ describe('Event-driven indexer golden fixtures replay', () => {
       {
         $setOnInsert: {
           shipmentId: '66a0b1c2d3e4f50617283940',
-          eventType: 'SETTLEMENT_COMPLETED',
+          milestoneEvent: 'SETTLEMENT_COMPLETED',
           transactionHash: events[2].tx_hash,
           actor: 'stellar-indexer',
         },
         $set: {
+          milestoneEvent: 'SETTLEMENT_COMPLETED',
           metadata: {
             blockNumber: 512400,
             ledger: 512400,
@@ -131,5 +154,13 @@ describe('Event-driven indexer golden fixtures replay', () => {
       },
       { upsert: true }
     );
+
+    // Only the anchor promotes its hash to the top-level indexed LedgerBlock.dataHash.
+    const [anchorBlock, initBlock, releaseBlock] = ledgerUpdateOneMock.mock.calls.map(
+      ([, update]) => (update as { $set: Record<string, unknown> }).$set
+    );
+    expect(anchorBlock.dataHash).toBe(events[0].data[0]);
+    expect(initBlock).not.toHaveProperty('dataHash');
+    expect(releaseBlock).not.toHaveProperty('dataHash');
   });
 });

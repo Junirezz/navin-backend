@@ -74,4 +74,8 @@ export interface ChainAdapter {
    */
   getLatestLedger?(): Promise<number>;
   getTransactionLedger?(txHash: string): Promise<number | null>;
+   * Confirmation count for a transaction at `ledger`.
+   * Implementations return at least three immediately for simulated chains.
+   */
+  getConfirmationCount(ledger: number): Promise<number>;
 }

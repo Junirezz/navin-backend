@@ -86,24 +86,23 @@ describe('GET /api/events — SSE endpoint', () => {
     // 2. Register the in-memory Redis mock BEFORE any module that depends on it
     //    is imported.  tokenBlocklist (and therefore requireSseAuth) reads the
     //    Redis client at import time, so the mock must exist first.
-    await jest.unstable_mockModule('../src/infra/redis/connection.js', () =>
-      redisMock(redisStore)
-    );
+    await jest.unstable_mockModule('../src/infra/redis/connection.js', () => redisMock(redisStore));
 
     // 3. Dynamically import application modules AFTER mocks are registered.
     const appModule = await import('../src/app.js');
     const blocklistModule = await import('../src/infra/redis/tokenBlocklist.js');
     const sseAuthModule = await import('../src/shared/middleware/requireSseAuth.js');
     const sseHubModule = await import('../src/infra/sse/sseHub.js');
+    const sseHubTestUtils = await import('./helpers/sseHubTestUtils.js');
     const factoriesModule = await import('./fixtures/factories.js');
 
     app = appModule.buildApp();
     blockToken = blocklistModule.blockToken as unknown as BlockToken;
     requireSseAuth = sseAuthModule.requireSseAuth as unknown as RequireSseAuth;
-    deliverToUserForTest = sseHubModule.deliverToUserForTest as unknown as DeliverToUserForTest;
-    getSseClientCount = sseHubModule.getSseClientCount as unknown as GetSseClientCount;
+    deliverToUserForTest = sseHubTestUtils.deliverToUserForTest as unknown as DeliverToUserForTest;
+    getSseClientCount = sseHubTestUtils.getSseClientCount as unknown as GetSseClientCount;
     registerSseClient = sseHubModule.registerSseClient as unknown as RegisterSseClient;
-    resetSseHubForTest = sseHubModule.resetSseHubForTest as unknown as ResetSseHubForTest;
+    resetSseHubForTest = sseHubTestUtils.resetSseHubForTest as unknown as ResetSseHubForTest;
     signJwt = factoriesModule.signToken as unknown as SignToken;
 
     resetSseHubForTest();
@@ -121,9 +120,13 @@ describe('GET /api/events — SSE endpoint', () => {
   // ── Helper (local) ─────────────────────────────────────────────────────────
 
   function signToken(overrides: Record<string, unknown> = {}): string {
-    return signJwt(
-      { userId: 'user-123', role: 'ADMIN', organizationId: 'org-456', jti: VALID_JTI, ...overrides }
-    );
+    return signJwt({
+      userId: 'user-123',
+      role: 'ADMIN',
+      organizationId: 'org-456',
+      jti: VALID_JTI,
+      ...overrides,
+    });
   }
 
   // ── Authentication ─────────────────────────────────────────────────────────
@@ -159,9 +162,7 @@ describe('GET /api/events — SSE endpoint', () => {
       await blockToken(REVOKED_JTI, 3600);
 
       const token = signToken({ jti: REVOKED_JTI });
-      const res = await request(app)
-        .get('/api/events')
-        .set('Authorization', `Bearer ${token}`);
+      const res = await request(app).get('/api/events').set('Authorization', `Bearer ${token}`);
 
       // HTTP status
       expect(res.status).toBe(401);

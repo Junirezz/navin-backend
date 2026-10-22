@@ -542,7 +542,15 @@ paths:
               properties:
                 event:
                   type: string
-                  enum: [shipment_created, status_changed, delivery_confirmed, payment_received, dispute_opened, dispute_resolved]
+                  enum:
+                    [
+                      shipment_created,
+                      status_changed,
+                      delivery_confirmed,
+                      payment_received,
+                      dispute_opened,
+                      dispute_resolved,
+                    ]
                 channel:
                   type: string
                   enum: [email, sms]
@@ -1085,7 +1093,7 @@ paths:
       summary: Self-service company registration
       description: |
         Creates both an Organization (type: ENTERPRISE) and its first admin user in a single atomic operation.
-        
+
         This endpoint enables self-service company onboarding without requiring a SUPER_ADMIN to pre-provision organizations.
         It creates:
         1. An Organization with type ENTERPRISE and company settings (industry, country, company size)
@@ -1194,7 +1202,7 @@ paths:
         Generates a new API key for machine-to-machine authentication.
         The API key is derived from the caller's organization (taken from JWT claims).
         The raw API key secret is returned exactly once and should be stored securely.
-        
+
         This endpoint replaces the deprecated `/api/auth/api-keys` route.
       tags:
         - API Keys
@@ -1274,7 +1282,7 @@ paths:
       description: |
         Returns all active API keys for the caller's organization.
         organizationId is derived from the JWT — no query parameter needed.
-        
+
         This endpoint replaces the deprecated `/api/auth/api-keys/{organizationId}` route.
       tags:
         - API Keys
@@ -1335,7 +1343,7 @@ paths:
         Soft-revokes an API key by setting `isActive = false`.
         The key cannot be used after revocation, but the record is retained for audit purposes.
         Only API keys belonging to the caller's organization can be revoked.
-        
+
         This endpoint replaces the deprecated `/api/auth/api-keys/{apiKeyId}` route.
       tags:
         - API Keys
@@ -2168,7 +2176,6 @@ paths:
         '404':
           description: Template not found
   /api/auth/login:
-
     post:
       operationId: auth_post_auth_login
       tags:
@@ -2241,7 +2248,7 @@ paths:
       description: |
         Refreshes an expired or expiring JWT by providing the old token.
         The old token's `jti` is blocklisted, preventing reuse.
-        
+
         Returns a new JWT valid for 7 days with fresh claims (userId, organizationId, role).
         Useful for maintaining user sessions without requiring re-login.
       tags:
@@ -3503,7 +3510,39 @@ paths:
                           minimum: 0
                           maximum: 100
                         description: 30-day sparkline of on-time rates (one value per day)
-                        example: [85, 86, 84, 87, 85, 86, 85, 84, 85, 86, 87, 85, 84, 86, 85, 86, 85, 87, 86, 85, 84, 85, 86, 85, 84, 85, 86, 87, 85, 86]
+                        example:
+                          [
+                            85,
+                            86,
+                            84,
+                            87,
+                            85,
+                            86,
+                            85,
+                            84,
+                            85,
+                            86,
+                            87,
+                            85,
+                            84,
+                            86,
+                            85,
+                            86,
+                            85,
+                            87,
+                            86,
+                            85,
+                            84,
+                            85,
+                            86,
+                            85,
+                            84,
+                            85,
+                            86,
+                            87,
+                            85,
+                            86,
+                          ]
                       averageTransitDays:
                         type: number
                         description: Current 30-day average transit time in days
@@ -4501,8 +4540,28 @@ paths:
                           type: string
                         stellarTxHash:
                           type: string
+                        stellarTxLedger:
+                          type: integer
+                          nullable: true
+                        verified:
+                          type: boolean
+                        confirmationMetadata:
+                          type: object
+                          nullable: true
+                          properties:
+                            ledger:
+                              type: integer
+                            confirmations:
+                              type: integer
+                              minimum: 0
+                            verified:
+                              type: boolean
+                            indexedAt:
+                              type: string
+                              format: date-time
                         anchorStatus:
                           type: string
+                          enum: [PENDING_ANCHOR, ANCHORED, ANCHOR_FAILED, VERIFIED]
                         anchorError:
                           type: string
                         createdAt:
@@ -4638,240 +4697,240 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/organizations:
-     post:
-       operationId: organizations_post_organizations
-       tags:
-         - Organizations
-       x-required-role: [SUPER_ADMIN]
-       summary: Create an organization
-       description: Creates a new organization. Requires SUPER_ADMIN role.
-       security:
-         - bearerAuth: []
-       requestBody:
-         required: true
-         content:
-           application/json:
-             schema:
-               type: object
-               required: [name, type]
-               properties:
-                 name:
-                   type: string
-                   description: Organization name
-                 type:
-                   type: string
-                   enum: [ENTERPRISE, LOGISTICS]
-                   description: Organization type
-                 settings:
-                   type: object
-                   description: Optional organization settings
-       responses:
-         '201':
-           description: Organization created successfully
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/Organization'
-         '401':
-           description: Unauthorized
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '403':
-           description: Forbidden - not SUPER_ADMIN
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '409':
-           description: Organization already exists
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-     get:
-       operationId: organizations_get_organizations
-       tags:
-         - Organizations
-       x-required-role: [SUPER_ADMIN]
-       summary: List all organizations
-       description: Lists all organizations. Requires SUPER_ADMIN role.
-       security:
-         - bearerAuth: []
-       responses:
-         '200':
-           description: Organizations retrieved successfully
-           content:
-             application/json:
-               schema:
-                 type: object
-                 properties:
-                   success:
-                     type: boolean
-                   message:
-                     type: string
-                   data:
-                     type: array
-                     items:
-                       $ref: '#/components/schemas/Organization'
-         '401':
-           description: Unauthorized
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '403':
-           description: Forbidden - not SUPER_ADMIN
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
+    post:
+      operationId: organizations_post_organizations
+      tags:
+        - Organizations
+      x-required-role: [SUPER_ADMIN]
+      summary: Create an organization
+      description: Creates a new organization. Requires SUPER_ADMIN role.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type]
+              properties:
+                name:
+                  type: string
+                  description: Organization name
+                type:
+                  type: string
+                  enum: [ENTERPRISE, LOGISTICS]
+                  description: Organization type
+                settings:
+                  type: object
+                  description: Optional organization settings
+      responses:
+        '201':
+          description: Organization created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not SUPER_ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Organization already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: organizations_get_organizations
+      tags:
+        - Organizations
+      x-required-role: [SUPER_ADMIN]
+      summary: List all organizations
+      description: Lists all organizations. Requires SUPER_ADMIN role.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not SUPER_ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/organizations/{id}:
-     get:
-       operationId: organizations_get_organizations_id
-       tags:
-         - Organizations
-       x-required-role: [ADMIN, SUPER_ADMIN]
-       summary: Get organization by ID
-       description: Get a single organization. ADMIN can read own; SUPER_ADMIN can read any.
-       security:
-         - bearerAuth: []
-       parameters:
-         - in: path
-           name: id
-           required: true
-           schema:
-             type: string
-       responses:
-         '200':
-           description: Organization retrieved successfully
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/Organization'
-         '401':
-           description: Unauthorized
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '403':
-           description: Forbidden - insufficient role or cross-org access
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '404':
-           description: Organization not found
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-     patch:
-       operationId: organizations_patch_organizations_id
-       tags:
-         - Organizations
-       x-required-role: [ADMIN, SUPER_ADMIN]
-       summary: Update organization
-       description: Update organization details. ADMIN can update own; SUPER_ADMIN can update any. ADMIN cannot modify type.
-       security:
-         - bearerAuth: []
-       parameters:
-         - in: path
-           name: id
-           required: true
-           schema:
-             type: string
-       requestBody:
-         required: true
-         content:
-           application/json:
-             schema:
-               type: object
-               properties:
-                 name:
-                   type: string
-                 settings:
-                   type: object
-       responses:
-         '200':
-           description: Organization updated successfully
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/Organization'
-         '400':
-           description: Validation error
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '401':
-           description: Unauthorized
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '403':
-           description: Forbidden - insufficient role or cross-org access
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '404':
-           description: Organization not found
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-     delete:
-       operationId: organizations_delete_organizations_id
-       tags:
-         - Organizations
-       x-required-role: [SUPER_ADMIN]
-       summary: Delete an organization
-       description: Soft-delete an organization. Requires SUPER_ADMIN role.
-       security:
-         - bearerAuth: []
-       parameters:
-         - in: path
-           name: id
-           required: true
-           schema:
-             type: string
-       responses:
-         '200':
-           description: Organization deleted successfully
-           content:
-             application/json:
-               schema:
-                 type: object
-                 properties:
-                   success:
-                     type: boolean
-                   message:
-                     type: string
-                   data:
-                     $ref: '#/components/schemas/Organization'
-         '401':
-           description: Unauthorized
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '403':
-           description: Forbidden - not SUPER_ADMIN
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
-         '404':
-           description: Organization not found
-           content:
-             application/json:
-               schema:
-                 $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: organizations_get_organizations_id
+      tags:
+        - Organizations
+      x-required-role: [ADMIN, SUPER_ADMIN]
+      summary: Get organization by ID
+      description: Get a single organization. ADMIN can read own; SUPER_ADMIN can read any.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - insufficient role or cross-org access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      operationId: organizations_patch_organizations_id
+      tags:
+        - Organizations
+      x-required-role: [ADMIN, SUPER_ADMIN]
+      summary: Update organization
+      description: Update organization details. ADMIN can update own; SUPER_ADMIN can update any. ADMIN cannot modify type.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                settings:
+                  type: object
+      responses:
+        '200':
+          description: Organization updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - insufficient role or cross-org access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      operationId: deleteOrganization
+      tags:
+        - Organizations
+      x-required-role: [SUPER_ADMIN]
+      summary: Delete an organization
+      description: Soft-delete an organization. Requires SUPER_ADMIN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Organization deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Organization'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not SUPER_ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/shipments/export:
     get:
       operationId: shipments_get_shipments_export
@@ -5148,7 +5207,7 @@ paths:
                 message: Validation failed - limit must be between 1 and 100
                 data: null
                 error:
-                  code: ERR_VALIDATION_FAILED
+                  code: VALIDATION_ERROR
                 details:
                   - path: limit
                     message: limit must be between 1 and 100
@@ -5852,7 +5911,18 @@ paths:
                   description: Array of shipment IDs to update (max 50)
                 status:
                   type: string
-                  enum: [CREATED, PICKUP_CONFIRMED, IN_TRANSIT, CUSTOMS_CLEARED, OUT_FOR_DELIVERY, DELIVERED, SETTLEMENT_INITIATED, SETTLEMENT_COMPLETED, CANCELLED]
+                  enum:
+                    [
+                      CREATED,
+                      PICKUP_CONFIRMED,
+                      IN_TRANSIT,
+                      CUSTOMS_CLEARED,
+                      OUT_FOR_DELIVERY,
+                      DELIVERED,
+                      SETTLEMENT_INITIATED,
+                      SETTLEMENT_COMPLETED,
+                      CANCELLED,
+                    ]
       responses:
         '200':
           description: Bulk status update completed
@@ -6025,7 +6095,7 @@ paths:
         - Total resolved anomalies
         - Breakdown by severity (LOW, MEDIUM, HIGH)
         - Breakdown by type (TEMPERATURE_EXCEEDED, HUMIDITY_EXCEEDED, etc.)
-        
+
         Results are cached for 5 minutes. Requires ADMIN or MANAGER role.
       tags:
         - Anomalies
@@ -6376,6 +6446,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/ledger/blocks/{id}/verification:
+    get:
+      operationId: ledger_get_ledger_blocks_id_verification
+      x-required-role: [ADMIN, MANAGER, VIEWER]
+      summary: Get client-side verification material for a ledger block
+      description: |
+        Returns everything a client needs to independently verify a ledger block
+        without trusting the API, in three steps:
+
+        1. Fetch `canonicalPayload`, `dataHash` and `txHash` from this endpoint.
+        2. Recompute `sha256(canonicalPayload)` client-side (Web Crypto) and compare
+           it with `dataHash`.
+        3. Query Horizon (`memo_hash` / `manageData` value) or Soroban RPC
+           (`getTransaction` + `getEvents`) for `txHash` and confirm the on-chain
+           digest equals `dataHash`.
+
+        See `docs/blockchain.md` for the copy-pasteable browser implementation.
+      tags:
+        - Ledger
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Ledger block ObjectId
+      responses:
+        '200':
+          description: Verification material retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/LedgerVerificationBundle'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - insufficient role
+        '404':
+          description: Ledger block not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/events/poll:
     get:
       operationId: events_get_events_poll
@@ -6484,7 +6607,22 @@ components:
     TelemetryUpdateEvent:
       type: object
       description: Real-time telemetry reading from an IoT sensor.
-      required: [type, publishedAt, telemetryId, shipmentId, sensorId, temperature, humidity, latitude, longitude, batteryLevel, timestamp, dataHash, anchorStatus]
+      required:
+        [
+          type,
+          publishedAt,
+          telemetryId,
+          shipmentId,
+          sensorId,
+          temperature,
+          humidity,
+          latitude,
+          longitude,
+          batteryLevel,
+          timestamp,
+          dataHash,
+          anchorStatus,
+        ]
       properties:
         type:
           type: string
@@ -6979,6 +7117,13 @@ components:
         stellarTxHash:
           type: string
           nullable: true
+        stellarTxLedger:
+          type: integer
+          nullable: true
+        confirmations:
+          type: integer
+          minimum: 0
+          description: Confirmed ledger depth for the Stellar transaction.
         explorerUrl:
           type: string
           nullable: true
@@ -7028,13 +7173,10 @@ components:
             - code
           properties:
             code:
-              type: string
-              example: ERR_VALIDATION_FAILED
+              $ref: '#/components/schemas/ErrorCode'
               description: |
                 Machine-readable error code for programmatic handling.
                 See docs/ERROR_CODES.md for the complete registry.
-                Common codes: ERR_AUTH_INVALID, ERR_PERMISSION_DENIED, ERR_NOT_FOUND,
-                ERR_VALIDATION_FAILED, ERR_DUPLICATE_KEY, ERR_INTERNAL_SERVER_ERROR
           description: Error details container with machine-readable code
         details:
           type: array
@@ -7060,7 +7202,7 @@ components:
         message: Validation failed - email must be a valid email address
         data: null
         error:
-          code: ERR_VALIDATION_FAILED
+          code: VALIDATION_ERROR
         details:
           - path: email
             message: Invalid email format
@@ -7098,7 +7240,18 @@ components:
       properties:
         status:
           type: string
-          enum: [CREATED, PICKUP_CONFIRMED, IN_TRANSIT, CUSTOMS_CLEARED, OUT_FOR_DELIVERY, DELIVERED, SETTLEMENT_INITIATED, SETTLEMENT_COMPLETED, CANCELLED]
+          enum:
+            [
+              CREATED,
+              PICKUP_CONFIRMED,
+              IN_TRANSIT,
+              CUSTOMS_CLEARED,
+              OUT_FOR_DELIVERY,
+              DELIVERED,
+              SETTLEMENT_INITIATED,
+              SETTLEMENT_COMPLETED,
+              CANCELLED,
+            ]
           description: The new status of the shipment.
         milestoneData:
           type: object
@@ -7130,7 +7283,15 @@ components:
           description: Document file (PDF, JPG, PNG, WebP). Max 10MB.
         type:
           type: string
-          enum: [BILL_OF_LADING, CUSTOMS_DECLARATION, INSURANCE_CERTIFICATE, PACKING_LIST, INVOICE, OTHER]
+          enum:
+            [
+              BILL_OF_LADING,
+              CUSTOMS_DECLARATION,
+              INSURANCE_CERTIFICATE,
+              PACKING_LIST,
+              INVOICE,
+              OTHER,
+            ]
           description: Document classification type.
     UploadPhotoRequest:
       type: object
@@ -7159,7 +7320,15 @@ components:
           description: MIME type of the uploaded file.
         type:
           type: string
-          enum: [BILL_OF_LADING, CUSTOMS_DECLARATION, INSURANCE_CERTIFICATE, PACKING_LIST, INVOICE, OTHER]
+          enum:
+            [
+              BILL_OF_LADING,
+              CUSTOMS_DECLARATION,
+              INSURANCE_CERTIFICATE,
+              PACKING_LIST,
+              INVOICE,
+              OTHER,
+            ]
           description: Document classification type.
         size:
           type: integer
@@ -7216,7 +7385,18 @@ components:
           description: Organization ID of the logistics provider.
         status:
           type: string
-          enum: [CREATED, PICKUP_CONFIRMED, IN_TRANSIT, CUSTOMS_CLEARED, OUT_FOR_DELIVERY, DELIVERED, SETTLEMENT_INITIATED, SETTLEMENT_COMPLETED, CANCELLED]
+          enum:
+            [
+              CREATED,
+              PICKUP_CONFIRMED,
+              IN_TRANSIT,
+              CUSTOMS_CLEARED,
+              OUT_FOR_DELIVERY,
+              DELIVERED,
+              SETTLEMENT_INITIATED,
+              SETTLEMENT_COMPLETED,
+              CANCELLED,
+            ]
           description: Current lifecycle status of the shipment.
         priority:
           type: string
@@ -7388,9 +7568,10 @@ components:
         updatedAt:
           type: string
           format: date-time
-    ErrorCodes:
+    ErrorCode:
       type: string
       enum:
+        - VALIDATION_ERROR
         - ERR_AUTH_INVALID
         - ERR_PERMISSION_DENIED
         - ERR_NOT_FOUND
@@ -7398,21 +7579,95 @@ components:
         - ERR_VALIDATION_FAILED
         - ERR_INTERNAL_SERVER_ERROR
         - ERR_SHIPMENT_NOT_FOUND
+        - ERR_SHIPMENT_INVALID_TRANSITION
         - ERR_PAYMENT_NOT_FOUND
+        - ERR_SETTLEMENT_NOT_FOUND
+        - ERR_SETTLEMENT_ALREADY_DISPUTED
+        - ERR_ORGANIZATION_NOT_FOUND
+        - ERR_TEMPLATE_NOT_FOUND
         - ERR_DUPLICATE_KEY
+        - ERR_AUTH_INVALID_RESET_TOKEN
+        - ERR_STELLAR_CONFIG
+        - ERR_STELLAR_INVALID_HASH
+        - ERR_CHAIN_UNAUTHORIZED
+        - ERR_CHAIN_INVALID_HASH
+        - ERR_CHAIN_ALREADY_ANCHORED
+        - ERR_CHAIN_ESCROW_EXISTS
+        - ERR_CHAIN_ESCROW_NOT_FOUND
+        - ERR_CHAIN_ESCROW_ALREADY_RELEASED
+        - ERR_CHAIN_INVALID_AMOUNT
+        - ERR_CHAIN_INVALID_PROOF
+        - ERR_CHAIN_UNKNOWN
+        - ERR_CHAIN_INVALID_EVENT
+        - ERR_RATE_LIMIT_EXCEEDED
         - ERR_LEDGER_BLOCK_NOT_FOUND
+        - ERR_FILE_TOO_LARGE
+        - ERR_INVALID_MIME_TYPE
+        - ERR_INVALID_DOCUMENT_TYPE
+        - ERR_PHOTO_LIMIT_EXCEEDED
+        - ERR_EVENTS_POLL_FAILED
+        - ERR_AUTH_TOKEN_REVOKED
+        - ERR_NOTIFICATION_NOT_FOUND
+        - ERR_AUTH_2FA_INVALID_CODE
+        - ERR_AUTH_2FA_NOT_SETUP
+        - ERR_AUTH_2FA_ALREADY_ENABLED
+        - ERR_AUTH_2FA_NOT_ENABLED
+        - ERR_AUTH_2FA_INVALID_BACKUP_CODE
+        - ERR_AUTH_2FA_INVALID_SECRET_FORMAT
+        - ERR_AUTH_INVALID_TOKEN_IDENTIFIER
+        - ERR_FILE_UPLOAD_FAILED
+        - ERR_FILE_DELETE_FAILED
       description: |
-        Standard error codes returned by the API. See docs/ERROR_CODES.md for details.
+        Exhaustive machine-readable error code registry. Every value of
+        `ErrorCodes` in src/shared/http/errors.ts is listed below, plus the
+        `VALIDATION_ERROR` literal emitted by validateRequest for 400 schema
+        failures. Referenced from ErrorResponse. See docs/ERROR_CODES.md for details.
+        - VALIDATION_ERROR: Schema validation failed (400)
         - ERR_AUTH_INVALID: Invalid or missing authentication token (401)
         - ERR_PERMISSION_DENIED: Insufficient role permissions (403)
         - ERR_NOT_FOUND: Generic resource not found (404)
         - ERR_BAD_REQUEST: Malformed request (400)
-        - ERR_VALIDATION_FAILED: Schema validation failed (400)
+        - ERR_VALIDATION_FAILED: Schema validation failed (400, legacy alias of VALIDATION_ERROR)
         - ERR_INTERNAL_SERVER_ERROR: Unhandled server error (500)
         - ERR_SHIPMENT_NOT_FOUND: Specific shipment not found (404)
+        - ERR_SHIPMENT_INVALID_TRANSITION: Shipment status transition not allowed (400)
         - ERR_PAYMENT_NOT_FOUND: Specific payment not found (404)
+        - ERR_SETTLEMENT_NOT_FOUND: Settlement not found (404)
+        - ERR_SETTLEMENT_ALREADY_DISPUTED: Settlement already disputed (409)
+        - ERR_ORGANIZATION_NOT_FOUND: Organization not found (404)
+        - ERR_TEMPLATE_NOT_FOUND: Shipment template not found (404)
         - ERR_DUPLICATE_KEY: Unique constraint violation (409)
+        - ERR_AUTH_INVALID_RESET_TOKEN: Invalid or expired reset token (400)
+        - ERR_STELLAR_CONFIG: Stellar server configuration missing (500)
+        - ERR_STELLAR_INVALID_HASH: Invalid Stellar data hash (400)
+        - ERR_CHAIN_UNAUTHORIZED: Contract NotAuthorized (403)
+        - ERR_CHAIN_INVALID_HASH: Contract InvalidHash (422)
+        - ERR_CHAIN_ALREADY_ANCHORED: Contract AlreadyAnchored (409)
+        - ERR_CHAIN_ESCROW_EXISTS: Contract EscrowExists (409)
+        - ERR_CHAIN_ESCROW_NOT_FOUND: Contract EscrowNotFound (404)
+        - ERR_CHAIN_ESCROW_ALREADY_RELEASED: Contract EscrowAlreadyReleased (409)
+        - ERR_CHAIN_INVALID_AMOUNT: Contract InvalidAmount (422)
+        - ERR_CHAIN_INVALID_PROOF: Contract InvalidProof (422)
+        - ERR_CHAIN_UNKNOWN: Unmapped contract error (502)
+        - ERR_CHAIN_INVALID_EVENT: Indexed event failed spec validation (502)
+        - ERR_RATE_LIMIT_EXCEEDED: Too many requests (429)
         - ERR_LEDGER_BLOCK_NOT_FOUND: Ledger block not found (404)
+        - ERR_FILE_TOO_LARGE: Upload exceeds size cap (413)
+        - ERR_INVALID_MIME_TYPE: Upload MIME type not accepted (415)
+        - ERR_INVALID_DOCUMENT_TYPE: Uploaded document type not accepted (415)
+        - ERR_PHOTO_LIMIT_EXCEEDED: Photo count limit reached (400)
+        - ERR_EVENTS_POLL_FAILED: Redis event store unavailable (502)
+        - ERR_AUTH_TOKEN_REVOKED: JWT revoked (401)
+        - ERR_NOTIFICATION_NOT_FOUND: Notification not found (404)
+        - ERR_AUTH_2FA_INVALID_CODE: TOTP code did not match (401)
+        - ERR_AUTH_2FA_NOT_SETUP: TOTP not configured (400)
+        - ERR_AUTH_2FA_ALREADY_ENABLED: TOTP already enabled (409)
+        - ERR_AUTH_2FA_NOT_ENABLED: Operation requires TOTP (400)
+        - ERR_AUTH_2FA_INVALID_BACKUP_CODE: Backup code did not match (401)
+        - ERR_AUTH_2FA_INVALID_SECRET_FORMAT: Stored TOTP secret unreadable (500)
+        - ERR_AUTH_INVALID_TOKEN_IDENTIFIER: Token jti is not a UUID v4 (400)
+        - ERR_FILE_UPLOAD_FAILED: Provider rejected the upload (502)
+        - ERR_FILE_DELETE_FAILED: Provider rejected the delete (502)
 
     ShipmentTimelineEventType:
       type: string
@@ -7519,8 +7774,9 @@ components:
         shipmentId:
           type: string
           description: Associated shipment ObjectId
-        eventType:
+        milestoneEvent:
           $ref: '#/components/schemas/MilestoneEvent'
+          description: Canonical lifecycle event for this block.
         dataHash:
           type: string
           nullable: true
@@ -7528,6 +7784,13 @@ components:
             SHA-256 hex digest of the payload committed by the on-chain transaction.
             Allows independent verification that `transactionHash` covers the expected data.
             Present only when the block was created with an associated on-chain anchor.
+        canonicalPayload:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: >
+            Canonical JSON payload that was hashed into dataHash and anchored on-chain.
+            Stored alongside the block for independent verification.
         transactionHash:
           type: string
           nullable: true
@@ -7544,6 +7807,39 @@ components:
         updatedAt:
           type: string
           format: date-time
+    LedgerVerificationBundle:
+      type: object
+      description: >
+        Off-chain / on-chain verification bundle for a ledger block, returned by
+        GET /api/ledger/blocks/{id}/verification. A verifier recomputes
+        sha256(canonicalPayload) and compares it with dataHash, then confirms the
+        digest is committed on-chain via txHash.
+      properties:
+        canonicalPayload:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: >
+            Exact object that was hashed into `dataHash`. Null for blocks written
+            before the payload began being persisted; such blocks are unverifiable,
+            not invalid.
+        dataHash:
+          type: string
+          nullable: true
+          description: >
+            Lowercase hex SHA-256 digest (64 chars) of the canonical payload,
+            committed on-chain by `txHash`.
+        txHash:
+          type: string
+          nullable: true
+          description: On-chain transaction hash to look up on Horizon / Soroban RPC.
+        transactionHash:
+          type: string
+          nullable: true
+          description: Alias of `txHash`.
+        ledger:
+          type: integer
+          description: Stellar ledger sequence the transaction landed in.
     Notification:
       type: object
       description: A notification entry for a user.
@@ -7608,7 +7904,15 @@ components:
           description: Owner user ObjectId.
         event:
           type: string
-          enum: [shipment_created, status_changed, delivery_confirmed, payment_received, dispute_opened, dispute_resolved]
+          enum:
+            [
+              shipment_created,
+              status_changed,
+              delivery_confirmed,
+              payment_received,
+              dispute_opened,
+              dispute_resolved,
+            ]
         channel:
           type: string
           enum: [email, sms]
