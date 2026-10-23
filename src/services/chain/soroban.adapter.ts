@@ -240,4 +240,5 @@ export class SorobanAdapter implements ChainAdapter {
       return (res as { ledger: number }).ledger;
     }
     return null;
-  }}
+  }
+}
